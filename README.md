@@ -37,4 +37,9 @@ CHANGE MASTER TO MASTER_HOST='%', MASTER_USER='repl', MASTER_PASSWORD='repl_pass
 - Kiểm tra các trường "Slave_IO_Running" và "Slave_SQL_Running" để đảm bảo replication đang chạy một cách bình thường.
 - Nếu các trường "Slave_IO_Running" và "Slave_SQL_Running" đều hiển thị giá trị "Yes", thì replication giữa master và slave đã được thiết lập thành công.
 ## 2. Postgre Database
-
+Chuẩn bị 2 máy với Postgre cùng phiên bản
+### Trên máy Master
+B1: Sửa cấu hình trong file postgresql.conf bằng lệnh: `sudo nano /etc/postgresql/15/main/postgresql.conf`
+B2: Tìm trong thư mục dòng `listen_addresses` và sửa từ `localhost` về thành `*` rồi lưu và thoát.
+B3: Đăng nhập vào postgre bằng lệnh `sudo -u postgres psql` và thêm dùng dùng để replication: `CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'admin@123';`
+B4: Sau khi thêm người dùng thì ta chỉnh sửa file pg_hba.conf bằng lệnh sudo nano /etc/postgresql/15/main/
