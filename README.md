@@ -40,29 +40,42 @@ CHANGE MASTER TO MASTER_HOST='%', MASTER_USER='repl', MASTER_PASSWORD='repl_pass
 Chuẩn bị 2 máy với Postgre cùng phiên bản, ở đây mình dùng phiên bản 15.3.
 ### Trên máy Master
 B1: Sửa cấu hình trong file postgresql.conf bằng lệnh: `sudo nano /etc/postgresql/15/main/postgresql.conf`.
+
 B2: Tìm trong thư mục dòng `listen_addresses` và sửa từ `localhost` về thành `*` rồi lưu và thoát.
+
 B3: Đăng nhập vào postgre bằng lệnh `sudo -u postgres psql` và thêm dùng dùng để replication: `CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'admin@123';`.
+
 B4: Sau khi thêm người dùng thì ta chỉnh sửa file pg_hba.conf bằng lệnh `sudo nano /etc/postgresql/15/main/pg_hba.conf`.
+
 B5: Thêm vào cuối dòng sau: `host    replication     replicator      ipslave/24      md5`.
+
 B6: Lưu và khởi động lại postgres `sudo systemctl restart postgresql`.
+
 B7 (Sau bước 4 ở máy slave): Đăng nhập vào postgres và có thể thấy vị trí sao chép có tên là slotslave1 khi mở chế độ xem pg_replication_slots như sau:
 `SELECT * FROM pg_replication_slots;`
 Nếu trên máy master hiện slaveslot1 thì là thành công.
+
 B8: Kiểm tra xem đã kết nối chưa bằng lệnh: `SELECT * FROM pg_stat_replication;`
 Nếu hiện là streaming là thành công.
+
 ### Trên máy Slave
 B1: Dừng postgres bằng lệnh `sudo systemctl stop postgresql`.
+
 B2: Tạo backup:
 ```
 su - postgres
 cp -R /var/lib/postgresql/14/main/ /var/lib/postgresql/15/main_old/
 ```
-B3: Sau đó ta xóa folder main cũ đi: `rm -rf /var/lib/postgresql/15/main/`
-B4: Bây giờ, sử dụng basebackup để có được một bản sao lưu cơ bản với quyền sở hữu chính xác bằng cách sử dụng postgres (hoặc bất kỳ người dùng nào có quyền chính xác).
-`pg_basebackup -h ip master -D /var/lib/postgresql/15/main/ -U replicator -P -v -R -X stream -C -S slaveslot1`
+B3: Sau đó ta xóa folder main cũ đi: `rm -rf /var/lib/postgresql/15/main/`.
+
+B4: Bây giờ, sử dụng basebackup để có được một bản sao lưu cơ bản với quyền sở hữu chính xác bằng cách sử dụng postgres (hoặc bất kỳ người dùng nào có quyền chính xác):
+`pg_basebackup -h ip master -D /var/lib/postgresql/15/main/ -U replicator -P -v -R -X stream -C -S slaveslot1`.
 Sau đó nhập mật khẩu vào để quá trình bắt đầu.
 Chú ý rằng file standby.signal được tạo ra và cài đặt kết nối được thêm vào postgresql.auto.conf:`ls -ltrh /var/lib/postgresql/15/main/`
+
 B5: Chạy lại postgres bằng lệnh `systemctl start postgresql`.
+
 B6: Dùng lệnh `SELECT * FROM pg_stat_wal_receiver;` để kiểm tra trạng thái ở chế độ chờ bằng lệnh bên dưới.
+
 ### Test
 Tạo 1 database ở máy master bằng lệnh `create database dbname;`, nếu ở bên máy slave khi dùng lệnh `\l`; mà có database đó thì là thành công.
