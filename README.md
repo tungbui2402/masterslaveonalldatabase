@@ -39,20 +39,20 @@ CHANGE MASTER TO MASTER_HOST='%', MASTER_USER='repl', MASTER_PASSWORD='repl_pass
 ## 2. Postgre Database
 Chuẩn bị 2 máy với Postgre cùng phiên bản, ở đây mình dùng phiên bản 15.3.
 ### Trên máy Master
-B1: Sửa cấu hình trong file postgresql.conf bằng lệnh: `sudo nano /etc/postgresql/15/main/postgresql.conf`
+B1: Sửa cấu hình trong file postgresql.conf bằng lệnh: `sudo nano /etc/postgresql/15/main/postgresql.conf`.
 B2: Tìm trong thư mục dòng `listen_addresses` và sửa từ `localhost` về thành `*` rồi lưu và thoát.
-B3: Đăng nhập vào postgre bằng lệnh `sudo -u postgres psql` và thêm dùng dùng để replication: `CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'admin@123';`
-B4: Sau khi thêm người dùng thì ta chỉnh sửa file pg_hba.conf bằng lệnh `sudo nano /etc/postgresql/15/main/pg_hba.conf`
-B5: Thêm vào cuối dòng sau: `host    replication     replicator      ipslave/24      md5`
-B6: Lưu và khởi động lại postgres `sudo systemctl restart postgresql`
+B3: Đăng nhập vào postgre bằng lệnh `sudo -u postgres psql` và thêm dùng dùng để replication: `CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'admin@123';`.
+B4: Sau khi thêm người dùng thì ta chỉnh sửa file pg_hba.conf bằng lệnh `sudo nano /etc/postgresql/15/main/pg_hba.conf`.
+B5: Thêm vào cuối dòng sau: `host    replication     replicator      ipslave/24      md5`.
+B6: Lưu và khởi động lại postgres `sudo systemctl restart postgresql`.
 B7 (Sau bước 4 ở máy slave): Đăng nhập vào postgres và có thể thấy vị trí sao chép có tên là slotslave1 khi mở chế độ xem pg_replication_slots như sau:
 `SELECT * FROM pg_replication_slots;`
 Nếu trên máy master hiện slaveslot1 thì là thành công.
 B8: Kiểm tra xem đã kết nối chưa bằng lệnh: `SELECT * FROM pg_stat_replication;`
 Nếu hiện là streaming là thành công.
 ### Trên máy Slave
-B1: Dừng postgres bằng lệnh `sudo systemctl stop postgresql`
-B2: Tạo backup
+B1: Dừng postgres bằng lệnh `sudo systemctl stop postgresql`.
+B2: Tạo backup:
 ```
 su - postgres
 cp -R /var/lib/postgresql/14/main/ /var/lib/postgresql/15/main_old/
