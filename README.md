@@ -64,7 +64,7 @@ B1: Dừng postgres bằng lệnh `sudo systemctl stop postgresql`.
 B2: Tạo backup:
 ```
 su - postgres
-cp -R /var/lib/postgresql/14/main/ /var/lib/postgresql/15/main_old/
+cp -R /var/lib/postgresql/15/main/ /var/lib/postgresql/15/main_old/
 ```
 B3: Sau đó ta xóa folder main cũ đi: `rm -rf /var/lib/postgresql/15/main/`.
 
