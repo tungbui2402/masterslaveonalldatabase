@@ -79,3 +79,229 @@ B6: Dùng lệnh `SELECT * FROM pg_stat_wal_receiver;` để kiểm tra trạng 
 
 ### Test
 Tạo 1 database ở máy master bằng lệnh `create database dbname;`, nếu ở bên máy slave khi dùng lệnh `\l`; mà có database đó thì là thành công.
+
+## 3. Mongo database
+### Để hoàn thành hướng dẫn này, chúng ta sẽ cần:
+- Hai máy chủ, mỗi máy chạy Ubuntu 20.04.
+- MongoDB được cài đặt trên mỗi máy chủ Ubuntu của chúng ta.
+### Các bước tiến hành:
+B1: Cấu hình phân giải DNS:
+
+Trước tiên, chúng ta sẽ cần thiết lập phân giải DNS trên mỗi máy chủ để chúng có thể giao tiếp với nhau bằng tên máy chủ.
+Tiến hành sửa file /etc/hosts trên mỗi node bằng lệnh `sudo nano /etc/hosts` và thêm các dòng sau:
+```
+ipmaster mongodb0.replset.member
+ipslave mongodb1.replset.member
+```
+Lưu và đóng file.
+Chúng ta có thể tiến hành bước tiếp theo.
+
+B2: Cấu hình node master:
+
+Bước này thực hiện bằng cách chỉnh sửa file cấu hình của MongoDB /etc/mongod.conf của node master.
+Tìm phần network interfaces trong file /etc/mongod.conf: `sudo nano /etc/mongod.conf`
+Thêm dấu , vào dòng bindIp bằng tên máy chủ như sau:
+```
+# network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1,mongodb0.replset.member
+```
+Tiếp theo, tìm dòng #replication: ở cuối file. Bỏ ghi chú dòng này bằng cách bỏ dấu thăng (#). Sau đó, thêm một replSetName, theo sau là tên mà MongoDB sẽ sử dụng để xác định tập hợp bản sao:
+```
+replication:
+  replSetName: "" # Chúng ta có thể cung cấp bất kỳ tên nào chúng ta muốn ở đây. Lưu ý: Có hai khoảng trắng trước replSetName và tên được đặt trong dấu ngoặc kép (").
+```
+B2: Cấu hình node slave:
+
+Bước này thực hiện bằng cách chỉnh sửa file cấu hình của MongoDB /etc/mongod.conf của node slave.
+Tìm phần network interfaces trong file /etc/mongod.conf: `sudo nano /etc/mongod.conf`
+Thêm dấu , vào dòng bindIp bằng tên máy chủ như sau:
+```
+# network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1,mongodb1.replset.member
+```
+Tiếp theo, tìm dòng #replication: ở cuối file. Bỏ ghi chú dòng này bằng cách bỏ dấu thăng (#). Sau đó, thêm một replSetName, theo sau là tên mà MongoDB sẽ sử dụng để xác định tập hợp bản sao:
+```
+replication:
+  replSetName: "" # Để giống bên master.
+```
+B4: Khởi động lại dịch vụ MongoDB trên tất cả máy
+```
+sudo systemctl restart mongod
+```
+B5: Thiết lập Replica Set:
+
+Tiếp theo, chúng ta sẽ cấu hình replicate trên node master và các node slave.
+Trên node master, kết nối với Mongo bằng người dùng quản trị:
+```
+mongo
+```
+Tiếp theo, khởi tạo tập hợp bản sao bằng lệnh sau:
+```
+rs.initiate()
+```
+Kết quả trả về như sau:
+```
+{
+    "info2" : "no configuration specified. Using a default configuration for the set",
+    "me" : "mongodb0.replset.member:27017",
+    "ok" : 1
+}
+```
+Tiếp theo, thêm node Slave 1 làm thành viên bằng lệnh sau:
+```
+replica0:SECONDARY> rs.add("mongodb1.replset.member")
+```
+Chúng ta cũng có thể kiểm tra trạng thái của tất cả các node bằng lệnh sau:
+```
+rs.status()
+```
+Kết quả ra như sau:
+```
+"set" : "rs0",
+        "date" : ISODate("2023-06-08T09:37:56.239Z"),
+        "myState" : 1,
+        "term" : NumberLong(1),
+        "syncSourceHost" : "",
+        "syncSourceId" : -1,
+        "heartbeatIntervalMillis" : NumberLong(2000),
+        "majorityVoteCount" : 2,
+        "writeMajorityCount" : 2,
+        "votingMembersCount" : 2,
+        "writableVotingMembersCount" : 2,
+        "optimes" : {
+                "lastCommittedOpTime" : {
+                        "ts" : Timestamp(1686217074, 1),
+                        "t" : NumberLong(1)
+                },
+                "lastCommittedWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                "readConcernMajorityOpTime" : {
+                        "ts" : Timestamp(1686217074, 1),
+                        "t" : NumberLong(1)
+                },
+                "appliedOpTime" : {
+                        "ts" : Timestamp(1686217074, 1),
+                        "t" : NumberLong(1)
+                },
+                "durableOpTime" : {
+                        "ts" : Timestamp(1686217074, 1),
+                        "t" : NumberLong(1)
+                },
+                "lastAppliedWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                "lastDurableWallTime" : ISODate("2023-06-08T09:37:54.600Z")
+        },
+        "lastStableRecoveryTimestamp" : Timestamp(1686217034, 1),
+        "electionCandidateMetrics" : {
+                "lastElectionReason" : "electionTimeout",
+                "lastElectionDate" : ISODate("2023-06-08T09:37:14.565Z"),
+                "electionTerm" : NumberLong(1),
+                "lastCommittedOpTimeAtElection" : {
+                        "ts" : Timestamp(1686217034, 1),
+                        "t" : NumberLong(-1)
+                },
+                "lastSeenOpTimeAtElection" : {
+                        "ts" : Timestamp(1686217034, 1),
+                        "t" : NumberLong(-1)
+                },
+                "numVotesNeeded" : 1,
+                "priorityAtElection" : 1,
+                "electionTimeoutMillis" : NumberLong(10000),
+                "newTermStartDate" : ISODate("2023-06-08T09:37:14.581Z"),
+                "wMajorityWriteAvailabilityDate" : ISODate("2023-06-08T09:37:14.602Z")
+        },
+        "members" : [
+                {
+                        "_id" : 0,
+                        "name" : "mongodb0.replset.member:27017",
+                        "health" : 1,
+                        "state" : 1,
+                        "stateStr" : "PRIMARY",
+                        "uptime" : 87,
+                        "optime" : {
+                                "ts" : Timestamp(1686217074, 1),
+                                "t" : NumberLong(1)
+                        },
+                        "optimeDate" : ISODate("2023-06-08T09:37:54Z"),
+                        "lastAppliedWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                        "lastDurableWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                        "syncSourceHost" : "",
+                        "syncSourceId" : -1,
+                        "infoMessage" : "",
+                        "electionTime" : Timestamp(1686217034, 2),
+                        "electionDate" : ISODate("2023-06-08T09:37:14Z"),
+                        "configVersion" : 3,
+                        "configTerm" : 1,
+                        "self" : true,
+                        "lastHeartbeatMessage" : ""
+                },
+                {
+                        "_id" : 1,
+                        "name" : "mongodb1.replset.member:27017",
+                        "health" : 1,
+                        "state" : 2,
+                        "stateStr" : "SECONDARY",
+                        "uptime" : 32,
+                        "optime" : {
+                                "ts" : Timestamp(1686217074, 1),
+                                "t" : NumberLong(1)
+                        },
+                        "optimeDurable" : {
+                                "ts" : Timestamp(1686217074, 1),
+                                "t" : NumberLong(1)
+                        },
+                        "optimeDate" : ISODate("2023-06-08T09:37:54Z"),
+                        "optimeDurableDate" : ISODate("2023-06-08T09:37:54Z"),
+                        "lastAppliedWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                        "lastDurableWallTime" : ISODate("2023-06-08T09:37:54.600Z"),
+                        "lastHeartbeat" : ISODate("2023-06-08T09:37:55.340Z"),
+                        "lastHeartbeatRecv" : ISODate("2023-06-08T09:37:54.347Z"),
+                        "pingMs" : NumberLong(0),
+                        "lastHeartbeatMessage" : "",
+                        "syncSourceHost" : "mongodb0.replset.member:27017",
+                        "syncSourceId" : 0,
+                        "infoMessage" : "",
+                        "configVersion" : 3,
+                        "configTerm" : 1
+                }
+        ],
+        "ok" : 1,
+        "$clusterTime" : {
+                "clusterTime" : Timestamp(1686217074, 1),
+                "signature" : {
+                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+                        "keyId" : NumberLong(0)
+                }
+        },
+        "operationTime" : Timestamp(1686217074, 1)
+}
+```
+### Thử nghiệm Replica Set
+Tạo cơ sở dữ liệu và thêm một số giá trị:
+```
+use test
+switched to db test
+for (var i = 0; i <= 10; i++) db.exampleTest.insert( { x : i } )
+```
+Đầu ra:
+```
+WriteResult({ "nInserted" : 1 })
+```
+Kiểm tra cơ sở dữ liệu của bạn bằng lệnh sau: ` show dbs `
+Đầu ra: 
+```
+test  0.000GB
+admin      0.000GB
+config     0.000GB
+local      0.000GB
+```
+Trên máy slave chạy lệnh: `db.getMongo().setSecondaryOk()`
+Tiếp theo, thay đổi cơ sở dữ liệu thành test: ` use test `
+Kết quả:
+```
+switched to db 123hostDB
+```
+Tiếp theo, chạy lệnh sau để hiển thị tất cả các tài liệu:
+Nếu bản sao đang hoạt động, chúng ta sẽ thấy danh sách các tài liệu mẫu mà chúng ta đã tạo trên node master.
