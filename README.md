@@ -312,3 +312,4 @@ switched to db test
 ```
 Tiếp theo, chạy lệnh sau để hiển thị tất cả các tài liệu:
 Nếu bản sao đang hoạt động, chúng ta sẽ thấy danh sách các tài liệu mẫu mà chúng ta đã tạo trên node master.
+Thêm lệnh `rs.secondaryOK()` trên máy slave để có thể chạy lệnh trên máy slave.
