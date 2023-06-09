@@ -308,7 +308,7 @@ Trên máy slave chạy lệnh: `db.getMongo().setSecondaryOk()`
 Tiếp theo, thay đổi cơ sở dữ liệu thành test: ` use test `
 Kết quả:
 ```
-switched to db 123hostDB
+switched to db test
 ```
 Tiếp theo, chạy lệnh sau để hiển thị tất cả các tài liệu:
 Nếu bản sao đang hoạt động, chúng ta sẽ thấy danh sách các tài liệu mẫu mà chúng ta đã tạo trên node master.
