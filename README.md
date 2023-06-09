@@ -1,9 +1,13 @@
 # master slave on all database
 ## 1. Percona Database
 ### Trên máy master:
-- Đầu tiên chúng ta chạy lệnh `sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf` để thiết lập cấu hình mysql
-- Sau đó ta tìm đến dòng bind-address=127.0.0.1 rồi thay đổi thông số về 0.0.0.0
-- Tiếp đến ta tìm tiếp 2 dòng là server-id=1 và log_bin=/var/log/mysql/mysql-bin.log và bỏ # ở trước đi
+- Đầu tiên chúng ta chạy lệnh `sudo nano /etc/mysql/percona-server.conf.d/mysqld.cnf` để thiết lập cấu hình mysql
+- Thêm dòng dưới đây vào cuối file:
+```
+# Replication
+server-id = 1
+log_bin = /var/log/mysql/mysql-bin.log
+```
 - Sau khi thiết lập xong thì chúng ta lưu lại rồi sử dụng lệnh `sudo systemctl restart mysql` để khởi động lại mysql
 - Tiếp theo vào mysql bằng mysql -u root -p
 - Tạo và cấp quyền cho tài khoản vừa tạo:
@@ -23,9 +27,12 @@ GRANT ALL PRIVILEGES ON *.* TO 'repl'@'%';
  1 row in set (0.01 sec)
  ```
 ### Trên máy slave:
-- Đầu tiên chúng ta chạy lệnh `sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf` để thiết lập cấu hình mysql
-- Sau đó ta tìm đến dòng bind-address=127.0.0.1 rồi thay đổi thông số về 0.0.0.0
-- Tiếp đến ta tìm tiếp 2 dòng là server-id=2 và log_bin=/var/log/mysql/mysql-bin.log và bỏ # ở trước đi
+- Đầu tiên chúng ta chạy lệnh `sudo nano /etc/mysql/percona-server.conf.d/mysqld.cnf` để thiết lập cấu hình mysql
+- Thêm dòng dưới đây vào cuối file:
+```
+# Replication
+server-id = 2
+```
 - Sau khi thiết lập xong thì chúng ta lưu lại rồi sử dụng lệnh `sudo systemctl restart mysql` để khởi động lại mysql
 - Tiếp theo vào `mysql bằng mysql -u root -p`
 - Dùng lệnh `stop slave;` để dừng slave
